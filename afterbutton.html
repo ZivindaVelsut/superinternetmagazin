@@ -271,37 +271,37 @@
   </div>
 
   <script>
-        function confirmOrder() {
-      // 1. Собираем данные из полей ввода (убедись, что ID полей совпадают!)
-      const firstName = document.getElementById('firstName').value || 'Не указано';
-      const lastName = document.getElementById('lastName').value || '';
-      const fullPhone = document.getElementById('phone').value || 'Нет номера';
+           function confirmOrder() {
+      // Безопасный сбор данных (если поля нет, код не умрет, а напишет "Не указано")
+      const firstNameField = document.getElementById('firstName');
+      const phoneField = document.getElementById('phone');
+      
+      const firstName = firstNameField ? firstNameField.value : 'Не указано';
+      const lastName = document.getElementById('lastName') ? document.getElementById('lastName').value : '';
+      const fullPhone = phoneField ? phoneField.value : 'Нет номера';
       
       let cart = JSON.parse(localStorage.getItem('cart')) || [];
       const total = cart.reduce((sum, item) => sum + Number(item.price), 0);
       const itemsList = cart.map(item => item.title).join(', ');
 
-      // 2. Текст заказа для тебя
+      // Инициализация EmailJS
+      emailjs.init("tNjSqPM91TKyckGf6");
+
       const orderMessage = `Новый заказ!\nСумма: ${total} грн.\nПокупатель: ${firstName} ${lastName}\nТелефон: ${fullPhone}\nТовары: ${itemsList}`;
 
-      // 3. Инициализация и отправка через EmailJS
-      emailjs.init("tNjSqPM91TKyckGf6");
+      // Отправка (теперь она не блокирует выполнение дальше)
       emailjs.send('zivinda.velsut@gmail.com', 'template_0duxv26', {
           message: orderMessage, 
-          to_email: 'zivinda.velsut@gmail.com',
-          from_name: "Мой Магазин"
-      }).then(function() {
-          console.log("Письмо успешно улетело!");
-      }, function(error) {
-          console.log("Ошибка EmailJS:", error);
-      });
+          to_email: 'zivinda.velsut@gmail.com'
+      }).catch(err => console.log("Ошибка почты:", err));
 
-      // 4. Показываем подтверждение покупателю
+      // Сразу показываем подтверждение, чтобы кнопка не "висла"
       alert(`Заказ оформлен! Сумма: ${total} грн.\nСпасибо за покупку!`);
       
-      // 5. Очищаем корзину и возвращаемся на главную
       localStorage.removeItem('cart');
       window.location.href = 'index.html';
+    }
+
     }
 
     function displayCart() {
