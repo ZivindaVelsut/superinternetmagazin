@@ -88,6 +88,7 @@
       margin-top: 20px;
     }
   </style>
+<script type="text/javascript" src="https://cdn.jsdelivr.net"></script>
 </head>
 <body>
 
@@ -452,20 +453,38 @@
         }
       }
 
-      let cart = JSON.parse(localStorage.getItem('cart')) || [];
+           let cart = JSON.parse(localStorage.getItem('cart')) || [];
       const total = cart.reduce((sum, item) => sum + Number(item.price), 0);
       const itemsList = cart.map(item => item.title).join(', ');
 
-      const message = `Спасибо, ${firstName} ${lastName} ${middleName}!\nЗаказ на сумму ${total} грн успешно оформлен.\nСпособ оплаты: ${paymentMethod}\nДоставка в отделение: ${branch}\nПо адресу: ${address}\nМы свяжемся с вами по номеру ${fullPhone}.\n\nТовары: ${itemsList}`;
+      // 1. Формируем текст для письма тебе
+      const messageForEmail = `Новый заказ!\nКлиент: ${firstName} ${lastName} ${middleName}\nСумма: ${total} грн\nОплата: ${paymentMethod}\nДоставка: ${branch}\nАдрес: ${address}\nТелефон: ${fullPhone}\nТовары: ${itemsList}`;
 
-      customAlert(message, function() {
-        localStorage.removeItem('cart');
-        window.location.href = 'index.html';
+      // 2. Инициализация EmailJS (Вставь свой Public Key из EmailJS -> Account)
+      emailjs.init("ТВОЙ_PUBLIC_KEY");
+
+      // 3. Отправка письма ТЕБЕ (происходит в фоновом режиме)
+      emailjs.send('zivinda.velsut@gmail.com', 'ТВОЙ_TEMPLATE_ID', {
+          message: messageForEmail, 
+          to_email: 'zivinda.velsut@gmail.com'
+      }).then(function() {
+          console.log("Письмо успешно отправлено владельцу магазина!");
+      }, function(error) {
+          console.log("Ошибка отправки письма:", error);
       });
-    }
+
+      // 4. Показываем ТАБЛИЦУ ПОДТВЕРЖДЕНИЯ покупателю
+      const messageForUser = `Спасибо, ${firstName} ${lastName} ${middleName}!\nЗаказ на сумму ${total} грн успешно оформлен.\nСпособ оплаты: ${paymentMethod}\nДоставка: ${branch}\nПо адресу: ${address}\nМы свяжемся с вами по номеру ${fullPhone}.\n\nТовары: ${itemsList}`;
+
+      customAlert(messageForUser, function() {
+          localStorage.removeItem('cart');
+          window.location.href = 'index.html';
+      });
+    } // Конец функции оформления
 
     displayCart();
     updatePhoneConstraint();
+
   </script>
 
 </body>
