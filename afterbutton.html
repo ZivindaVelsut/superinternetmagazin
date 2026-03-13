@@ -271,40 +271,58 @@
   </div>
 
   <script>
-           function confirmOrder() {
-      // Безопасный сбор данных (если поля нет, код не умрет, а напишет "Не указано")
-      const firstNameField = document.getElementById('firstName');
-      const phoneField = document.getElementById('phone');
-      
-      const firstName = firstNameField ? firstNameField.value : 'Не указано';
-      const lastName = document.getElementById('lastName') ? document.getElementById('lastName').value : '';
-      const fullPhone = phoneField ? phoneField.value : 'Нет номера';
+             // 1. Инициализация (Твой ключ)
+    emailjs.init("tNjSqPM91TKyckGf6");
+
+    function confirmOrder() {
+      console.log("Кнопка нажата!");
+
+      // Собираем данные (безопасно)
+      const fName = document.getElementById('firstName')?.value || 'Клиент';
+      const lName = document.getElementById('lastName')?.value || '';
+      const phone = document.getElementById('phone')?.value || 'Нет номера';
       
       let cart = JSON.parse(localStorage.getItem('cart')) || [];
       const total = cart.reduce((sum, item) => sum + Number(item.price), 0);
       const itemsList = cart.map(item => item.title).join(', ');
 
-      // Инициализация EmailJS
-      emailjs.init("tNjSqPM91TKyckGf6");
+      const orderMessage = `Новый заказ!\nСумма: ${total} грн.\nПокупатель: ${fName} ${lName}\nТелефон: ${phone}\nТовары: ${itemsList}`;
 
-      const orderMessage = `Новый заказ!\nСумма: ${total} грн.\nПокупатель: ${firstName} ${lastName}\nТелефон: ${fullPhone}\nТовары: ${itemsList}`;
-
-      // Отправка (теперь она не блокирует выполнение дальше)
+      // Отправка письма (в фоновом режиме)
       emailjs.send('zivinda.velsut@gmail.com', 'template_0duxv26', {
           message: orderMessage, 
           to_email: 'zivinda.velsut@gmail.com'
-      }).catch(err => console.log("Ошибка почты:", err));
+      }).then(() => console.log("Письмо улетело!"))
+        .catch(err => console.log("Ошибка почты:", err));
 
-      // Сразу показываем подтверждение, чтобы кнопка не "висла"
-      alert(`Заказ оформлен! Сумма: ${total} грн.\nСпасибо за покупку!`);
+      // СРАЗУ показываем подтверждение, чтобы кнопка не «висла»
+      alert("Заказ оформлен! Сумма: " + total + " грн.\nСпасибо за покупку!");
       
       localStorage.removeItem('cart');
       window.location.href = 'index.html';
     }
 
+    function displayCart() {
+      const cartList = document.getElementById('cart-list');
+      if (!cartList) return;
+
+      let cart = JSON.parse(localStorage.getItem('cart')) || [];
+
+      if (cart.length === 0) {
+        cartList.innerHTML = '<p>Корзина пуста</p>';
+        return;
+      }
+
+      cartList.innerHTML = cart.map((item, index) => `
+        <div class="item">
+          <span>${item.title} - ${item.price} грн</span>
+        </div>
+      `).join('');
     }
 
-    function displayCart() {
+    // Запуск при загрузке страницы
+    window.onload = displayCart;
+
       const cartList = document.getElementById('cart-list');
       const totalSum = document.getElementById('total-sum');
       const totalInfo = document.getElementById('total-info');
