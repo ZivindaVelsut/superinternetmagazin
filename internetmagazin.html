@@ -1,0 +1,522 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Магазин</title>
+  <style>
+    body {
+      font-family: MONOSPACE;
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      background-color: #f4f4f4;
+      padding-top: 60px;
+    }
+    /* Стили для модального окна */
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.5);
+      z-index: 2000;
+      justify-content: center;
+      align-items: center;
+    }
+    .modal-content {
+      background: white;
+      padding: 30px;
+      border-radius: 30px;
+      border: 2px dotted black;
+      width: 350px;
+      text-align: center;
+      font-family: MONOSPACE;
+    }
+    .product-card {
+      width: 750px;
+      border: 2px dotted black;
+      padding: 20px;
+      border-radius: 50px;
+      margin: 20px;
+      background: white;
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      max-width: 90%;
+    }
+    .product-card img {
+      width: 100%;
+      height: auto;
+      max-height: 250px;
+      object-fit: contain;
+      border-radius: 15px;
+    }
+    h2 {
+      font-size: 20px;
+      margin: 15px 0;
+    }
+    .description {
+      font-size: 14px;
+      margin-bottom: 10px;
+      line-height: 1.4;
+    }
+    .price {
+      font-weight: bold;
+      font-size: 18px;
+      margin-bottom: 10px;
+    }
+    .quantity-controls {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 15px;
+      margin-bottom: 15px;
+    }
+    .qty-btn {
+      width: 30px;
+      height: 30px;
+      border: 2px dotted black;
+      background: white;
+      color: black;
+      border-radius: 50%;
+      cursor: pointer;
+      font-family: MONOSPACE;
+      font-weight: bold;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 0;
+      margin: 0;
+    }
+    .qty-btn:hover {
+      background: #eee;
+    }
+    .qty-value {
+      font-weight: bold;
+      font-size: 18px;
+      min-width: 25px;
+    }
+    button {
+      border: none;
+      background-color: black;
+      color: white;
+      width: 120px;
+      height: 40px;
+      border-radius: 20px;
+      font-family: MONOSPACE;
+      cursor: pointer;
+      transition: background 0.3s;
+      align-self: center;
+      margin-top: auto;
+    }
+    button:hover {
+      background-color: #333;
+    }
+    .cart-link {
+      position: fixed;
+      top: 15px;
+      right: 20px;
+      background: white;
+      color: black;
+      padding: 8px 15px;
+      text-decoration: none;
+      z-index: 1000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
+      border: 2px dotted black;
+      border-radius: 15px;
+      transition: background 0.3s;
+      font-family: MONOSPACE;
+    }
+    .cart-link:hover {
+      background: #eee;
+    }
+    .btn-ok {
+      margin-top: 20px;
+      background: black;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 15px;
+      cursor: pointer;
+      font-family: MONOSPACE;
+      width: 100%;
+    }
+    .search-container {
+      position: fixed;
+      top: 15px;
+      left: 20px;
+      z-index: 1000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      background: white;
+      padding: 8px 15px;
+      border: 2px dotted black;
+      border-radius: 15px;
+      font-family: MONOSPACE;
+      height: auto;
+      font-size: 16px;
+      transition: background 0.3s;
+    }
+    .search-container:hover {
+      background: #eee;
+    }
+    .search-icon {
+      font-size: 16px;
+      flex-shrink: 0;
+    }
+    .search-input {
+      border: none;
+      padding: 0;
+      font-family: MONOSPACE;
+      font-size: 16px;
+      outline: none;
+      width: 110px;
+      background: transparent;
+    }
+    .search-input::placeholder {
+      color: #999;
+    }
+    @media (max-width: 1024px) {
+      .search-input {
+        width: 150px;
+      }
+    }
+    @media (max-width: 768px) {
+      .search-input {
+        width: 120px;
+        font-size: 16px;
+      }
+    }
+    @media (max-width: 480px) {
+      .search-input {
+        width: 90px;
+        font-size: 16px;
+      }
+    }
+    .hidden {
+      display: none !important;
+    }
+
+  </style>
+</head>
+<body>
+  <div class="search-container">
+    <span class="search-icon">🔎</span>
+    <input type="text" class="search-input" id="search-input" placeholder="Поиск..." oninput="filterProducts()">
+  </div>
+
+  <a href="afterbutton.html" class="cart-link">
+  🛒 Корзина (<span id="cart-count">0</span>)
+  </a>
+
+  <!-- Модальное окно уведомления -->
+  <div id="modal-alert" class="modal-overlay">
+    <div class="modal-content">
+      <p id="alert-text"></p>
+      <button onclick="closeModal()" class="btn-ok">ОК</button>
+    </div>
+  </div>
+
+  <div class="product-card">
+    <h2>HP EliteBook 850 G5</h2>
+    <img src="https://korob.com.ua/920136-tm_home_default/noutbuk_hp_elitebook_850_g5_fhd_lte_touch_noweb_i5_8350u_16_256ssd_class_b.jpg">
+    <p class="description">Быстрый и качественный лептоп с частотой обновления экрана 60.06Гц, с хорошим разрешением экрана 1920 на 1080, с оперативной памятью 16 Гб и с внутреней памятью 238 Гб, очень хороший лептоп как для повседневных задач, так и для сложных задач.</p>
+    <p class="price">14000 грн</p>
+    <div class="quantity-controls">
+      <button class="qty-btn" onclick="updateQty(this, -1)">-</button>
+      <span class="qty-value">1</span>
+      <button class="qty-btn" onclick="updateQty(this, 1)">+</button>
+    </div>
+    <button onclick="addToCart(this, 'HP EliteBook 850 G5', 14000)">Купить</button>
+  </div>
+
+  <div class="product-card">
+    <h2>Samsung Galaxy A30s</h2>
+    <img src="https://recorder.com.ua/image/cache/catalog/oc_499652d4be11a875d02aae32ea1051cf2eeeb9-1000x600.jpg">
+    <p class="description">Смартфон который оснащён 6,4-дюймовым Super AMOLED экраном с разрешением 720×1560 пикселей, Основная камера тройная: 25 МП, 8 МП и 5 МП, а фронтальная имеет 16 МП. Объём оперативной памяти 4 ГБ, встроенная память 32Гб , при этом поддерживаются карты microSD до 512 ГБ. Аккумулятор ёмкостью 4000 мА·ч.</p>
+    <p class="price">10000 грн</p>
+    <div class="quantity-controls">
+      <button class="qty-btn" onclick="updateQty(this, -1)">-</button>
+      <span class="qty-value">1</span>
+      <button class="qty-btn" onclick="updateQty(this, 1)">+</button>
+    </div>
+    <button onclick="addToCart(this, 'Samsung Galaxy A30s', 10000)">Купить</button>
+  </div>
+
+  <div class="product-card">
+    <h2>Samsung Galaxy S25 ultra</h2>
+    <img src="https://scdn.comfy.ua/89fc351a-22e7-41ee-8321-f8a9356ca351/https://cdn.comfy.ua/media/catalog/product/s/m/sm-s938_galaxys25ultra_front_titaniumblack_241107.jpg/w_600">
+    <p class="description">Быстрый и качественный smartphone с частотой обновления экрана 120Гц, с прекрасным разрешением экрана 3120x1440, с оперативной памятью 16 Гб и с внутреней памятью 512 Гб, очень хороший смартфон с титановым корпусом и с камерой 200+50+50+10 Мп.</p>
+    <p class="price">65000 грн</p>
+    <div class="quantity-controls">
+      <button class="qty-btn" onclick="updateQty(this, -1)">-</button>
+      <span class="qty-value">1</span>
+      <button class="qty-btn" onclick="updateQty(this, 1)">+</button>
+    </div>
+    <button onclick="addToCart(this, 'Samsung Galaxy S25 ultra', 65000)">Купить</button>
+  </div>
+
+  <div class="product-card">
+    <h2>Samsung Galaxy A72</h2>
+    <img src="https://www.samsung-online.com.ua/uploads/shop/products/large/ffb3cbc6441cf0a13aba1242fd5ee2b8.jpg">
+    <p class="description">Быстрый и качественный смартфон с частотой обновления экрана 90Гц, с хорошим разрешением экрана 2400x1080 , с оперативной памятью 6 Гб и с внутреней памятью 216 Гб, очень хороший смартфон с камерой 64 Мп + 12 Мп + 8 Мп + 5 Мп.</p>
+    <p class="price">18000 грн</p>
+    <div class="quantity-controls">
+      <button class="qty-btn" onclick="updateQty(this, -1)">-</button>
+      <span class="qty-value">1</span>
+      <button class="qty-btn" onclick="updateQty(this, 1)">+</button>
+    </div>
+    <button onclick="addToCart(this, 'Samsung Galaxy A72', 18000)">Купить</button>
+  </div>
+
+  <div class="product-card">
+    <h2>Redmi note 10 pro</h2>
+    <img src="https://m.media-amazon.com/images/I/61lEJiJ61TL._AC_UF894,1000_QL80_.jpg">
+    <p class="description">Быстрый и качественный смартфон с частотой обновления экрана 90-120Гц, с хорошим разрешением экрана 1080 x 2400, с оперативной памятью 6 Гб и с внутреней памятью 128 Гб, очень хороший смартфон с камерой 64 Мп + 12 Мп + 8 Мп + 5 Мп.</p>
+    <p class="price">19000 грн</p>
+    <div class="quantity-controls">
+      <button class="qty-btn" onclick="updateQty(this, -1)">-</button>
+      <span class="qty-value">1</span>
+      <button class="qty-btn" onclick="updateQty(this, 1)">+</button>
+    </div>
+    <button onclick="addToCart(this, 'Redmi note 10 pro', 19000)">Купить</button>
+  </div>
+
+  <div class="product-card">
+    <h2>Nokia 3720с</h2>
+    <img src="https://image-thumbs.shafastatic.net/2033558550_310_430">
+    <p class="description">Непромакаемыый и качественный кнопочный телефон с удобным, крепким железным корпусом.</p>
+    <p class="price">3000 грн</p>
+    <div class="quantity-controls">
+      <button class="qty-btn" onclick="updateQty(this, -1)">-</button>
+      <span class="qty-value">1</span>
+      <button class="qty-btn" onclick="updateQty(this, 1)">+</button>
+    </div>
+    <button onclick="addToCart(this, 'Nokia 3720с', 3000)">Купить</button>
+  </div>
+
+  <div class="product-card">
+    <h2>Nokia G22</h2>
+    <img src="https://www.ttt.ua/uploads/shop/products/large/91ab59ce0a5f7cfbb2324405a0157b4a.jpg">
+    <p class="description">Качественный смартфон который имеет экран 6.5 дюйма с разрешением 1600x720 пикселей
+      память 4 ГБ оперативной и 128 ГБ встроенной
+      камера основная 50 Мп и фронтальная 8 Мп
+      батарея 5050 мАч с поддержкой зарядки 20 Вт.</p>
+    <p class="price">13000 грн</p>
+    <div class="quantity-controls">
+      <button class="qty-btn" onclick="updateQty(this, -1)">-</button>
+      <span class="qty-value">1</span>
+      <button class="qty-btn" onclick="updateQty(this, 1)">+</button>
+    </div>
+    <button onclick="addToCart(this, 'Nokia G22', 13000)">Купить</button>
+  </div>
+
+  <div class="product-card">
+    <h2>Xiaomi Poco X3 Pro</h2>
+    <img src="https://i.allo.ua/media/catalog/product/cache/1/image/710x600/602f0fa2c1f0d1ba5e241f914e856ff9/4/7/47845674567.webp">
+    <p class="description">Качественный смартфон который ооснащен 6.67-дюймовым IPS экраном с частотой 120 Гц. Разрешение дисплея составляет 
+       пикселей. Смартфон работает на мощном процессоре Qualcomm Snapdragon 860. Память 8/256 ГБ (UFS 3.1). Аккумулятор имеет емкость 5160 мАч с быстрой зарядкой 33 Вт, камера 48 Мп (основная), 8 Мп (ультраширокая), 2 Мп+2 Мп (макро/глубина), 20 Мп (фронтальная).</p>
+    <p class="price">15000 грн</p>
+    <div class="quantity-controls">
+      <button class="qty-btn" onclick="updateQty(this, -1)">-</button>
+      <span class="qty-value">1</span>
+      <button class="qty-btn" onclick="updateQty(this, 1)">+</button>
+    </div>
+    <button onclick="addToCart(this, 'Xiaomi Poco X3 Pro', 15000)">Купить</button>
+  </div>
+
+  <div class="product-card">
+    <h2>Ipad A16</h2>
+    <img src="https://prod-cdn.prod.asbis.io/s3size/el:t/rt:fill/plain/s3://cms/product/d1/c3/d1c3b5b30dd5c9a81ca0fa0feec1af50/250423160048018169.webp">
+    <p class="description">Планшет имеет экран Liquid Retina имеет диагональ 10.9 дюйма с разрешением 2360 на 1640 пикселей, плотностью 264 ppi и яркостью до 500 нит.
+      Внутренняя память 256 ГБ, а объем оперативной памяти составляет 4 ГБ для плавной работы системы.
+      Процессор A14 Bionic включает 6 ядер CPU, 4 графических ядра и 16-ядерную систему Neural Engine.
+      Разъем USB‑C используется для зарядки и подключения аксессуаров, поддерживая также работу с Apple Pencil через специальный адаптер.</p>
+    <p class="price">18000 грн</p>
+    <div class="quantity-controls">
+      <button class="qty-btn" onclick="updateQty(this, -1)">-</button>
+      <span class="qty-value">1</span>
+      <button class="qty-btn" onclick="updateQty(this, 1)">+</button>
+    </div>
+    <button onclick="addToCart(this, 'Ipad A16', 18000)">Купить</button>
+  </div>
+
+  <div class="product-card">
+    <h2>ZTE Blade a3 2020</h2>
+    <img src="https://i.allo.ua/media/catalog/product/cache/1/image/710x600/602f0fa2c1f0d1ba5e241f914e856ff9/f/i/file_1573_25_1.webp">
+    <p class="description">Бюджетный смартфон оснащен 5.45-дюймовым IPS-экраном с разрешением 1440х720, работает на 4-ядерном процессоре Spreadtrum SC9832E. Модель имеет 1 ГБ оперативной памяти, 32 ГБ встроенной, основную камеру 8 Мп и аккумулятор на 2600 мАч. ОС — Android 9.0 Go Edition, есть NFC , Wi-Fi, Bluetooth и 4G LTE.</p>
+    <p class="price">4000 грн</p>
+    <div class="quantity-controls">
+      <button class="qty-btn" onclick="updateQty(this, -1)">-</button>
+      <span class="qty-value">1</span>
+      <button class="qty-btn" onclick="updateQty(this, 1)">+</button>
+    </div>
+    <button onclick="addToCart(this, 'ZTE Blade a3 2020', 4000)">Купить</button>
+  </div>
+
+  <div class="product-card">
+    <h2>Samsung galaxy Flip7</h2>
+    <img src="https://mobileplanet.ua/uploads/product/2025-7-16/samsung-galaxy-flip7-12-256gb-blue-shadow-sm-f766b-348678.webp">
+    <p class="description">Samsung Galaxy Z Flip7 получил 6.9-дюймовый основной дисплей Dynamic AMOLED 2X с разрешением 2520х1080 пикселейработающий на частоте 120 Гц. Смартфон оснащен мощным процессором Exynos 2500 обеспечивающим высокую производительность. В наличии 12 ГБ оперативной памяти и встроенноe хранилище 512 ГБ. Основная камера представлена модулем 50 МП + 12 МПа емкость аккумулятора составляет 4300 мАч.</p>
+    <p class="price">20000 грн</p>
+    <div class="quantity-controls">
+      <button class="qty-btn" onclick="updateQty(this, -1)">-</button>
+      <span class="qty-value">1</span>
+      <button class="qty-btn" onclick="updateQty(this, 1)">+</button>
+    </div>
+    <button onclick="addToCart(this, 'Samsung galaxy Flip7 ', 20000)">Купить</button>
+  </div>
+
+  <div class="product-card">
+    <h2>Motorola moto z play</h2>
+    <img src="https://www.aks.ua/images/products/94bd9b87a4ff671c469425de7ef36052_large.webp">
+    <p class="description">Motorola Moto Z Play (2016) — тонкий Android-смартфон с поддержкой модулей Moto Modsоснащенный 5.5" Super AMOLED экраном 1080pпроцессором Snapdragon 625, 3 ГБ ОЗУ и 32 ГБ встроенной памяти. Имеет 16 Мп основную камеру с лазерным фокусомбатарею 3510 мАч и NFC.</p>
+    <p class="price">8000 грн</p>
+    <div class="quantity-controls">
+      <button class="qty-btn" onclick="updateQty(this, -1)">-</button>
+      <span class="qty-value">1</span>
+      <button class="qty-btn" onclick="updateQty(this, 1)">+</button>
+    </div>
+    <button onclick="addToCart(this, 'Motorola moto z play ', 8000)">Купить</button>
+  </div>
+
+  <div class="product-card">
+    <h2>Samsung Galaxy Tab A T510</h2>
+    <img src="https://content.rozetka.com.ua/goods/images/big/272903984.jpg">
+    <p class="description">Планшет Samsung Galaxy Tab A T510 (2019) — это 10.1-дюймовое устройство с разрешением экрана 
+ пикселей, работающее на 8-ядерном процессоре Exynos 7904. Он оснащен 2 ГБ оперативной и 32 ГБ встроенной памяти, поддерживает карты microSD до 512 ГБ. Устройство имеет камеры 8 Мп и 5 Мп, батарею на 6150 мАч и работает на Android.</p>
+    <p class="price">11000 грн</p>
+    <div class="quantity-controls">
+      <button class="qty-btn" onclick="updateQty(this, -1)">-</button>
+      <span class="qty-value">1</span>
+      <button class="qty-btn" onclick="updateQty(this, 1)">+</button>
+    </div>
+    <button onclick="addToCart(this, 'Samsung Galaxy Tab A T510', 11000)">Купить</button>
+  </div>
+
+    <div class="product-card">
+    <h2>Google pixel 9A</h2>
+    <img src="https://yabloki.ua/media/cache/sylius_shop_product_original/a3/27/smartfon-google-pixel-9a-12-128gb-iris_f84ebc9d-dd20-4bb7-833f-d170fe00a0df-7.png.webp">
+    <p class="description">Смартфон Google Pixel 9a оснащен 6,3-дюймовым дисплеем Actua OLED с разрешением 2424 x 1080 пикселей и частотой обновления 120 Гц, работает на базе восьмиядерного процессора Google Tensor G4 в сочетании с 8 ГБ оперативной памяти и накопителем на 256 ГБ, имеет основную камеру на 48 Мп с оптической стабилизацией, сверхширокоугольный модуль на 13 Мп, фронтальную камеру на 13 Мп, а также аккумулятор емкостью 5100 мАч с поддержкой быстрой зарядки и защиту корпуса по стандарту IP68.</p>
+    <p class="price">21000 грн</p>
+    <div class="quantity-controls">
+      <button class="qty-btn" onclick="updateQty(this, -1)">-</button>
+      <span class="qty-value">1</span>
+      <button class="qty-btn" onclick="updateQty(this, 1)">+</button>
+    </div>
+    <button onclick="addToCart(this, 'Google pixel 9A', 21000)">Купить</button>
+    </div>
+
+  <div class="product-card">
+    <h2>Samsung galaxy S26 ultra</h2>
+    <img src="https://i.allo.ua/media/catalog/product/cache/1/image/524x494/602f0fa2c1f0d1ba5e241f914e856ff9/s/m/sm-s948_galaxys26ultra_front_cobaltviolet_251120_result_1.webp">
+    <p class="description">Samsung Galaxy S26 Ultra оснащен 6,9-дюймовым дисплеем Dynamic AMOLED 2X с разрешением 
+     и частотой 120 Гц, процессором Snapdragon 8 Elite Gen 5, основной камерой на 200 Мп и батареей 5000 мА·ч. Память варьируется: оперативная 16 ГБ, встроенная 1 ТБ. </p>
+    <p class="price">65000 грн</p>
+    <div class="quantity-controls">
+      <button class="qty-btn" onclick="updateQty(this, -1)">-</button>
+      <span class="qty-value">1</span>
+      <button class="qty-btn" onclick="updateQty(this, 1)">+</button>
+    </div>
+    <button onclick="addToCart(this, 'Samsung galaxy s26 ultra', 65000)">Купить</button>
+    </div>
+
+
+  <div class="product-card">
+    <h2>Samsung galaxy A55</h2>
+    <img src="https://c.dns-shop.ru/thumb/st1/fit/300/300/367de154bd6bcafafe62175491c09d41/a2bcd681e902e56f7097f0bf72201cac5a4277d8c711d7d58c0d55ff476fe907.jpg">
+    <p class="description">Samsung Galaxy A55 оснащен 6.6-дюймовым Super AMOLED экраном с разрешением 2340x1080 (FHD+), частотой 120 Гц и прочным стеклом Gorilla Glass Victus+. Работает устройство на 8-ядерном процессоре Exynos 1480, который обеспечивает стабильную производительность в повседневных задачах и играх. Память представлена в конфигурациях 8/12 ГБ оперативной (LPDDR5) и 128/256 ГБ постоянной (UFS 3.1) с поддержкой карт microSD до 1 ТБ. Основная камера имеет модули 50 Мп (OIS), 12 Мп (широкоугольная) и 5 Мп (макро), обеспечивая качественную съемку, а аккумулятор емкостью 5000 мАч поддерживает быструю зарядку 25 ВТ.</p>
+    <p class="price">25000 грн</p>
+    <div class="quantity-controls">
+      <button class="qty-btn" onclick="updateQty(this, -1)">-</button>
+      <span class="qty-value">1</span>
+      <button class="qty-btn" onclick="updateQty(this, 1)">+</button>
+    </div>
+    <button onclick="addToCart(this, 'Samsung galaxy A55', 25000)">Купить</button>
+    </div>
+
+  <script>
+    function updateCartCount() {
+      const cart = JSON.parse(localStorage.getItem('cart')) || [];
+      document.getElementById('cart-count').innerText = cart.length;
+    }
+
+    function customAlert(message) {
+      const modal = document.getElementById('modal-alert');
+      document.getElementById('alert-text').innerText = message;
+      modal.style.display = 'flex';
+    }
+
+    function closeModal() {
+      document.getElementById('modal-alert').style.display = 'none';
+    }
+
+    function updateQty(btn, change) {
+      const container = btn.parentElement;
+      const qtySpan = container.querySelector('.qty-value');
+      let qty = parseInt(qtySpan.innerText);
+      qty += change;
+      if (qty < 1) qty = 1;
+      if (qty > 10) qty = 10;
+      qtySpan.innerText = qty;
+    }
+
+    function addToCart(btn, title, price) {
+      const qty = parseInt(btn.parentElement.querySelector('.qty-value').innerText);
+      const cart = JSON.parse(localStorage.getItem('cart')) || [];
+      
+      for (let i = 0; i < qty; i++) {
+        cart.push({ title, price });
+      }
+      
+      localStorage.setItem('cart', JSON.stringify(cart));
+      updateCartCount();
+      
+      // Сбрасываем количество на 1 после покупки
+      btn.parentElement.querySelector('.qty-value').innerText = "1";
+      
+      // Меняем текст кнопки на 10 секунд
+      const originalText = "Купить";
+      btn.innerText = "В корзине";
+      btn.disabled = true;
+      btn.style.backgroundColor = "gray"; // Дополнительная индикация
+      
+      setTimeout(() => {
+        btn.innerText = originalText;
+        btn.disabled = false;
+        btn.style.backgroundColor = "black";
+      }, 10000);
+
+      customAlert(`${qty}Х ${title} добавлен(ы) в корзину!`);
+    }
+
+    updateCartCount();
+
+    function filterProducts() {
+      const searchTerm = document.getElementById('search-input').value.toLowerCase();
+      const productCards = document.querySelectorAll('.product-card');
+      
+      productCards.forEach(card => {
+        const productTitle = card.querySelector('h2').textContent.toLowerCase();
+        const productDescription = card.querySelector('.description').textContent.toLowerCase();
+        
+        if (productTitle.includes(searchTerm) || productDescription.includes(searchTerm)) {
+          card.classList.remove('hidden');
+        } else {
+          card.classList.add('hidden');
+        }
+      });
+    }
+  </script>
+</body>
+</html>
+
