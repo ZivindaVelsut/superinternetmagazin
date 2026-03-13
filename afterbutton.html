@@ -271,13 +271,11 @@
   </div>
 
   <script>
-             // 1. Инициализация (Твой ключ)
+                // 1. Инициализация почты
     emailjs.init("tNjSqPM91TKyckGf6");
 
+    // 2. Функция подтверждения заказа
     function confirmOrder() {
-      console.log("Кнопка нажата!");
-
-      // Собираем данные (безопасно)
       const fName = document.getElementById('firstName')?.value || 'Клиент';
       const lName = document.getElementById('lastName')?.value || '';
       const phone = document.getElementById('phone')?.value || 'Нет номера';
@@ -288,46 +286,28 @@
 
       const orderMessage = `Новый заказ!\nСумма: ${total} грн.\nПокупатель: ${fName} ${lName}\nТелефон: ${phone}\nТовары: ${itemsList}`;
 
-      // Отправка письма (в фоновом режиме)
+      // Отправка письма
       emailjs.send('zivinda.velsut@gmail.com', 'template_0duxv26', {
           message: orderMessage, 
           to_email: 'zivinda.velsut@gmail.com'
-      }).then(() => console.log("Письмо улетело!"))
-        .catch(err => console.log("Ошибка почты:", err));
+      }).then(() => console.log("Письмо улетело!"));
 
-      // СРАЗУ показываем подтверждение, чтобы кнопка не «висла»
+      // Показываем подтверждение
       alert("Заказ оформлен! Сумма: " + total + " грн.\nСпасибо за покупку!");
       
       localStorage.removeItem('cart');
       window.location.href = 'index.html';
     }
 
+    // 3. Функция отрисовки корзины
     function displayCart() {
-      const cartList = document.getElementById('cart-list');
-      if (!cartList) return;
-
-      let cart = JSON.parse(localStorage.getItem('cart')) || [];
-
-      if (cart.length === 0) {
-        cartList.innerHTML = '<p>Корзина пуста</p>';
-        return;
-      }
-
-      cartList.innerHTML = cart.map((item, index) => `
-        <div class="item">
-          <span>${item.title} - ${item.price} грн</span>
-        </div>
-      `).join('');
-    }
-
-    // Запуск при загрузке страницы
-    window.onload = displayCart;
-
       const cartList = document.getElementById('cart-list');
       const totalSum = document.getElementById('total-sum');
       const totalInfo = document.getElementById('total-info');
       const cartActions = document.getElementById('cart-actions');
       const checkoutForm = document.getElementById('checkout-form');
+
+      if (!cartList) return;
 
       let cart = JSON.parse(localStorage.getItem('cart')) || [];
 
@@ -336,52 +316,45 @@
             <p>Корзина пока пуста</p>
             <button class="btn-back" onclick="window.location.href='index.html'">Вернуться к покупкам</button>
         `;
-        totalSum.innerText = "0";
-        totalInfo.style.display = 'none';
-        cartActions.style.display = 'none';
-        checkoutForm.style.display = 'none';
+        if (totalSum) totalSum.innerText = "0";
+        if (totalInfo) totalInfo.style.display = 'none';
+        if (cartActions) cartActions.style.display = 'none';
+        if (checkoutForm) checkoutForm.style.display = 'none';
         return;
       }
 
-      totalInfo.style.display = 'block';
-      cartActions.style.display = 'block';
+      if (totalInfo) totalInfo.style.display = 'block';
+      if (cartActions) cartActions.style.display = 'block';
 
       cartList.innerHTML = cart.map((item, index) => `
-        <div class="item" onclick="this.classList.toggle('active')">
+        <div class="item">
           <span>${item.title} - ${item.price} грн</span>
-          <button class="delete-btn" onclick="event.stopPropagation(); removeFromCart(${index}, '${item.title}')">удалить товар</button>
+          <button class="delete-btn" onclick="removeFromCart(${index})">удалить</button>
         </div>
       `).join('');
 
       const total = cart.reduce((sum, item) => sum + Number(item.price), 0);
-      totalSum.innerText = total;
+      if (totalSum) totalSum.innerText = total;
     }
 
-    function customConfirm(message, callback) {
-      const modal = document.getElementById('modal-confirm');
-      document.getElementById('modal-text').innerText = message;
-      modal.style.display = 'flex';
-      
-      document.getElementById('modal-yes').onclick = function() {
-        modal.style.display = 'none';
-        callback(true);
-      };
-      document.getElementById('modal-no').onclick = function() {
-        modal.style.display = 'none';
-        callback(false);
-      };
+    // 4. Функции удаления и очистки
+    function removeFromCart(index) {
+        let cart = JSON.parse(localStorage.getItem('cart')) || [];
+        cart.splice(index, 1);
+        localStorage.setItem('cart', JSON.stringify(cart));
+        displayCart();
     }
 
-    function customAlert(message, callback) {
-      const modal = document.getElementById('modal-alert');
-      document.getElementById('alert-text').innerText = message;
-      modal.style.display = 'flex';
-      
-      document.getElementById('modal-ok').onclick = function() {
-        modal.style.display = 'none';
-        if(callback) callback();
-      };
+    function clearCart() {
+        if (confirm("Очистить корзину?")) {
+            localStorage.removeItem('cart');
+            displayCart();
+        }
     }
+
+    // 5. Запуск при загрузке
+    window.onload = displayCart;
+
 
     function removeFromCart(index, title) {
       customConfirm(`Вы уверены что хотите удалить товар ${title}?`, function(confirmed) {
